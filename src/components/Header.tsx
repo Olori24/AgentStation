@@ -1,5 +1,5 @@
 import React from 'react';
-import { GitBranch, Github, Cpu, Radio, Sparkles, History, CheckCircle2, AlertCircle, Loader2, Server } from 'lucide-react';
+import { GitBranch, Github, Cpu, Radio, Sparkles, History, CheckCircle2, AlertCircle, Loader2, Server, Plus } from 'lucide-react';
 import { GITHUB_REPO_INFO } from '../data/defaults';
 import { CiStatusInfo } from '../types';
 import { AgentStationLogo } from './AgentStationLogo';
@@ -34,13 +34,24 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
       {/* Brand & Status */}
-      <AgentStationLogo
-        size="md"
-        showText={true}
-        showSubtitle={true}
-        isLive={true}
-        onClick={onNewMission}
-      />
+      <div className="flex items-center gap-3">
+        <AgentStationLogo
+          size="md"
+          showText={true}
+          showSubtitle={true}
+          isLive={true}
+          onClick={onNewMission}
+        />
+
+        <button
+          onClick={onNewMission}
+          title="Start a new task with a simple prompt"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-600/20 transition"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Prompt</span>
+        </button>
+      </div>
 
       {/* Center cluster status */}
       <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs font-mono">

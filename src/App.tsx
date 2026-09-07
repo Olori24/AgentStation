@@ -21,6 +21,8 @@ import { OllamaModal } from './components/OllamaModal';
 import { MissionHistoryPanel } from './components/MissionHistoryPanel';
 import { UserOnboardingModal } from './components/UserOnboardingModal';
 import { FullStackOperationsModal } from './components/FullStackOperationsModal';
+import { ManusHeroPrompt } from './components/ManusHeroPrompt';
+import { ManusWorkspace } from './components/ManusWorkspace';
 import { DEFAULT_AGENTS, INITIAL_MISSION, GITHUB_REPO_INFO } from './data/defaults';
 import { SAMPLE_MISSIONS } from './data/sampleMissions';
 import { SquadMission, AgentProfile, AgentRole, AgentLogEntry, WorkspaceFile, VideoProject, CiStatusInfo, TerminalStreamMessage } from './types';
@@ -40,6 +42,7 @@ export default function App() {
   const [mission, setMission] = useState<SquadMission>(() => {
     return missionHistory[0] || INITIAL_MISSION;
   });
+  const [isHomePromptMode, setIsHomePromptMode] = useState<boolean>(false);
   const [agents, setAgents] = useState<AgentProfile[]>(DEFAULT_AGENTS);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [activeAgentRole, setActiveAgentRole] = useState<AgentRole | undefined>(undefined);
@@ -293,6 +296,7 @@ export default function App() {
 
   // Run autonomous multi-agent squad
   const handleExecutePrompt = async (promptText: string) => {
+    setIsHomePromptMode(false);
     setIsExecuting(true);
     const newMissionId = `mission-${Date.now()}`;
     const nowTime = new Date().toLocaleTimeString();
@@ -571,7 +575,9 @@ export default function App() {
 
   const handleSelectMission = (selected: SquadMission) => {
     setMission(selected);
-    showToast(`Loaded mission ${selected.id}: "${selected.prompt.slice(0, 36)}..."`);
+    setStreamingTerminalOutput(selected.execution?.stdout || '');
+    setIsHomePromptMode(false);
+    showToast(`Loaded mission: "${selected.prompt.slice(0, 36)}..."`);
   };
 
   const handleDeleteMission = (id: string) => {
@@ -612,9 +618,7 @@ export default function App() {
         onOpenGitHub={() => setIsGitHubModalOpen(true)}
         onOpenOllama={() => setIsOllamaModalOpen(true)}
         onOpenFullStack={() => setIsFullStackModalOpen(true)}
-        onNewMission={() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onNewMission={() => setIsHomePromptMode(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         historyCount={missionHistory.length}
@@ -624,190 +628,37 @@ export default function App() {
         ciStatus={ciStatus}
       />
 
-      {/* Active Squad Bar */}
-      <SquadBar
-        agents={agents}
-        activeAgentRole={activeAgentRole}
-        isExecuting={isExecuting}
-      />
-
-      {/* Prompt Command Station */}
-      <PromptStation
-        onExecutePrompt={handleExecutePrompt}
-        isExecuting={isExecuting}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
-      />
-
-      {/* Real-World Use Case Quickstart Bar */}
-      <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-1.5">
-        <div className="p-3 rounded-xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-slate-900/60 border border-blue-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-            <span className="text-slate-300 font-medium">
-              Real-World Use Cases Ready for End-to-End Testing:
-            </span>
-            <span className="text-slate-400 hidden md:inline">
-              CLI Task Engine & Web GUI, WebSocket Telemetry HUD, AES-256 Vault, and Stripe Webhook Idempotency.
-            </span>
-          </div>
-          <button
-            onClick={() => setIsOnboardingOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-slate-950 font-bold text-xs transition flex items-center gap-1.5 shadow-sm shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 fill-current" />
-            <span>Test Drive Real Use Cases</span>
-          </button>
-        </div>
-      </div>
-
-      {/* View Mode Switcher */}
-      <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 pt-4 pb-2 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-          <button
-            onClick={() => setViewMode('split')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
-              viewMode === 'split'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Columns className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Split Workspace</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('code')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
-              viewMode === 'code'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Code2 className="w-3.5 h-3.5" />
-            <span>Code Sandbox</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('video')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
-              viewMode === 'video'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Film className="w-3.5 h-3.5" />
-            <span>Video Studio</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode('stream')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition font-medium ${
-              viewMode === 'stream'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>Activity Stream</span>
-          </button>
-        </div>
-
-        {/* Action Controls Right */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsHistoryOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 hover:text-amber-300 transition"
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Mission History</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px]">
-              {missionHistory.length}
-            </span>
-          </button>
-
-          {/* Quick Sync with GitHub button */}
-          <button
-            onClick={() => setIsGitHubModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 hover:text-blue-300 transition"
-          >
-            <Github className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Sync with</span>
-            <span>Olori24/AgentStation</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content Panels */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-3 min-h-0">
-        {viewMode === 'split' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[720px]">
-            {/* Left: Activity Stream (4 cols) */}
-            <div className="lg:col-span-4 h-full">
-              <AgentActivityStream logs={mission.logs} isExecuting={isExecuting} />
-            </div>
-
-            {/* Middle: Code Workspace (4 cols) */}
-            <div className="lg:col-span-4 h-full">
-              <CodeWorkspace
-                files={mission.files}
-                execution={mission.execution}
-                onRunCommand={handleRunCommand}
-                isRunningCommand={isRunningCommand}
-                streamingTerminalOutput={streamingTerminalOutput}
-                isStreamingTerminal={isStreamingTerminal}
-                isWsConnected={isWsConnected}
-                onClearTerminal={() => setStreamingTerminalOutput('')}
-                onUpdateFile={handleUpdateFile}
-                onAddFile={handleAddFile}
-                onDeleteFile={handleDeleteFile}
-                onPushToGitHub={() => setIsGitHubModalOpen(true)}
-              />
-            </div>
-
-            {/* Right: Video Studio (4 cols) */}
-            <div className="lg:col-span-4 h-full">
-              <VideoStudio
-                video={mission.video}
-                onUpdateVideo={handleUpdateVideo}
-              />
-            </div>
-          </div>
-        )}
-
-        {viewMode === 'code' && (
-          <div className="h-[740px]">
-            <CodeWorkspace
-              files={mission.files}
-              execution={mission.execution}
-              onRunCommand={handleRunCommand}
-              isRunningCommand={isRunningCommand}
-              streamingTerminalOutput={streamingTerminalOutput}
-              isStreamingTerminal={isStreamingTerminal}
-              isWsConnected={isWsConnected}
-              onClearTerminal={() => setStreamingTerminalOutput('')}
-              onUpdateFile={handleUpdateFile}
-              onAddFile={handleAddFile}
-              onDeleteFile={handleDeleteFile}
-              onPushToGitHub={() => setIsGitHubModalOpen(true)}
-            />
-          </div>
-        )}
-
-        {viewMode === 'video' && (
-          <div className="h-[740px]">
-            <VideoStudio
-              video={mission.video}
-              onUpdateVideo={handleUpdateVideo}
-            />
-          </div>
-        )}
-
-        {viewMode === 'stream' && (
-          <div className="h-[740px] max-w-4xl mx-auto">
-            <AgentActivityStream logs={mission.logs} isExecuting={isExecuting} />
-          </div>
-        )}
-      </main>
+      {isHomePromptMode ? (
+        <main className="flex-1 flex flex-col justify-center">
+          <ManusHeroPrompt
+            onExecutePrompt={handleExecutePrompt}
+            isExecuting={isExecuting}
+            recentMissions={missionHistory}
+            onSelectMission={handleSelectMission}
+            onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          />
+        </main>
+      ) : (
+        <ManusWorkspace
+          mission={mission}
+          agents={agents}
+          isExecuting={isExecuting}
+          activeAgentRole={activeAgentRole}
+          onExecuteFollowUpPrompt={handleExecutePrompt}
+          onRunCommand={handleRunCommand}
+          isRunningCommand={isRunningCommand}
+          streamingTerminalOutput={streamingTerminalOutput}
+          isStreamingTerminal={isStreamingTerminal}
+          isWsConnected={isWsConnected}
+          onClearTerminal={() => setStreamingTerminalOutput('')}
+          onUpdateFile={handleUpdateFile}
+          onAddFile={handleAddFile}
+          onDeleteFile={handleDeleteFile}
+          onUpdateVideo={handleUpdateVideo}
+          onPushToGitHub={() => setIsGitHubModalOpen(true)}
+          onNewMission={() => setIsHomePromptMode(true)}
+        />
+      )}
 
       {/* Footer Info */}
       <footer className="border-t border-slate-800/80 bg-slate-950/60 px-4 lg:px-8 py-3 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">

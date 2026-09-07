@@ -19,15 +19,20 @@ import {
   Sparkles,
   Radio,
   Wifi,
+  Film,
 } from 'lucide-react';
 import JSZip from 'jszip';
-import { WorkspaceFile, TestExecutionResult } from '../types';
+import { WorkspaceFile, TestExecutionResult, VideoProject } from '../types';
+import { VideoStudio } from './VideoStudio';
 
 interface CodeWorkspaceProps {
   files: WorkspaceFile[];
   execution: TestExecutionResult;
   onRunCommand: (command: string) => Promise<void>;
   isRunningCommand: boolean;
+  video?: VideoProject | null;
+  onUpdateVideo?: (updated: VideoProject) => void;
+  defaultTab?: 'editor' | 'diff' | 'preview' | 'terminal' | 'video';
   streamingTerminalOutput?: string;
   isStreamingTerminal?: boolean;
   isWsConnected?: boolean;
@@ -44,6 +49,9 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   execution,
   onRunCommand,
   isRunningCommand,
+  video,
+  onUpdateVideo,
+  defaultTab = 'preview',
   streamingTerminalOutput,
   isStreamingTerminal = false,
   isWsConnected = false,
@@ -57,7 +65,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [customCommand, setCustomCommand] = useState('');
-  const [activeTab, setActiveTab] = useState<'editor' | 'diff' | 'preview' | 'terminal'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'diff' | 'preview' | 'terminal' | 'video'>(defaultTab);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddingFile, setIsAddingFile] = useState(false);
@@ -298,30 +306,6 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         <div className="flex items-center gap-1 pb-1 shrink-0">
           <div className="flex items-center p-0.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
             <button
-              onClick={() => setActiveTab('editor')}
-              className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
-                activeTab === 'editor'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <FileCode className="w-3 h-3" />
-              <span>Editor</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('diff')}
-              className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
-                activeTab === 'diff'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <FolderGit2 className="w-3 h-3" />
-              <span>Diff</span>
-            </button>
-
-            <button
               onClick={() => setActiveTab('preview')}
               className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
                 activeTab === 'preview'
@@ -334,6 +318,18 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('editor')}
+              className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
+                activeTab === 'editor'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FileCode className="w-3 h-3" />
+              <span>Editor</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('terminal')}
               className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
                 activeTab === 'terminal'
@@ -343,6 +339,30 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             >
               <Terminal className="w-3 h-3" />
               <span>Sandbox</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('video')}
+              className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
+                activeTab === 'video'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Film className="w-3 h-3" />
+              <span>Video</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('diff')}
+              className={`px-2 py-1 rounded flex items-center gap-1 font-mono transition ${
+                activeTab === 'diff'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <FolderGit2 className="w-3 h-3" />
+              <span>Diff</span>
             </button>
           </div>
 
@@ -703,6 +723,13 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               <span>Run</span>
             </button>
           </form>
+        </div>
+      )}
+
+      {/* 4. VIDEO STUDIO TAB */}
+      {activeTab === 'video' && (
+        <div className="flex-1 flex flex-col min-h-0 bg-slate-950 overflow-hidden">
+          <VideoStudio video={video} onUpdateVideo={onUpdateVideo} />
         </div>
       )}
 
