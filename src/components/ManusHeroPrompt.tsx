@@ -90,18 +90,17 @@ export const ManusHeroPrompt: React.FC<ManusHeroPromptProps> = ({
       <div className="flex flex-col items-center text-center space-y-3 mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 text-xs font-mono text-slate-300 shadow-lg">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-semibold text-white">Autonomous AgentSquad</span>
+          <span className="font-semibold text-white">Manus Autonomous Agent</span>
           <span className="text-slate-500">•</span>
-          <span className="text-amber-400 font-bold">Manus AI Architecture</span>
+          <span className="text-blue-400 font-bold">Virtual Computer Active</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-          What should we build today?
+          What can I do for you today?
         </h1>
 
         <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          Type a simple prompt. Your autonomous squad architects the plan, writes full-stack code,
-          executes tests in an isolated sandbox, and delivers production software.
+          Assign a complex task, build full-stack web applications, or execute test suites. Manus plans, writes code, and executes autonomously.
         </p>
       </div>
 
@@ -114,10 +113,10 @@ export const ManusHeroPrompt: React.FC<ManusHeroPromptProps> = ({
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask AgentStation to build anything... (e.g. Build an AI-powered SaaS with auth, billing API, tests, and a launch video)"
+                placeholder="Assign a task or ask a question... (e.g. Build an enterprise task manager with SQLite, REST API, tests, and launch video)"
                 rows={3}
                 disabled={isExecuting}
-                className="w-full bg-transparent text-slate-100 placeholder-slate-500 text-base sm:text-lg focus:outline-none resize-none leading-relaxed"
+                className="w-full bg-transparent text-slate-100 placeholder-slate-500 text-base sm:text-lg focus:outline-none resize-none leading-relaxed font-sans"
                 autoFocus
               />
             </div>
@@ -128,7 +127,7 @@ export const ManusHeroPrompt: React.FC<ManusHeroPromptProps> = ({
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px] border border-slate-700/50">
                   <Code2 className="w-3 h-3 text-blue-400" />
-                  Full-Stack Code
+                  Full-Stack App
                 </span>
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px] border border-slate-700/50">
                   <Shield className="w-3 h-3 text-emerald-400" />
@@ -136,7 +135,7 @@ export const ManusHeroPrompt: React.FC<ManusHeroPromptProps> = ({
                 </span>
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px] border border-slate-700/50">
                   <Terminal className="w-3 h-3 text-amber-400" />
-                  WebSocket Stream
+                  Browser Operator
                 </span>
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 text-slate-300 font-mono text-[11px] border border-slate-700/50">
                   <Video className="w-3 h-3 text-purple-400" />

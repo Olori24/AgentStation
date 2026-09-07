@@ -23,6 +23,9 @@ import { UserOnboardingModal } from './components/UserOnboardingModal';
 import { FullStackOperationsModal } from './components/FullStackOperationsModal';
 import { ManusHeroPrompt } from './components/ManusHeroPrompt';
 import { ManusWorkspace } from './components/ManusWorkspace';
+import { ManusSidebar } from './components/ManusSidebar';
+import { ManusConversation } from './components/ManusConversation';
+import { ManusComputer } from './components/ManusComputer';
 import { DEFAULT_AGENTS, INITIAL_MISSION, GITHUB_REPO_INFO } from './data/defaults';
 import { SAMPLE_MISSIONS } from './data/sampleMissions';
 import { SquadMission, AgentProfile, AgentRole, AgentLogEntry, WorkspaceFile, VideoProject, CiStatusInfo, TerminalStreamMessage } from './types';
@@ -43,6 +46,8 @@ export default function App() {
     return missionHistory[0] || INITIAL_MISSION;
   });
   const [isHomePromptMode, setIsHomePromptMode] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [computerTab, setComputerTab] = useState<'browser' | 'terminal' | 'code' | 'video'>('browser');
   const [agents, setAgents] = useState<AgentProfile[]>(DEFAULT_AGENTS);
   const [isExecuting, setIsExecuting] = useState<boolean>(false);
   const [activeAgentRole, setActiveAgentRole] = useState<AgentRole | undefined>(undefined);
@@ -343,6 +348,7 @@ export default function App() {
 
       setTimeout(() => {
         setActiveAgentRole('qa');
+        setComputerTab('terminal');
         setAgents((prev) =>
           prev.map((a) =>
             a.id === 'developer'
@@ -441,6 +447,7 @@ export default function App() {
 
       setMission(finalMission);
       updateHistoryWithMission(finalMission);
+      setComputerTab('browser');
 
       setAgents((prev) => prev.map((a) => ({ ...a, status: 'completed' })));
       setActiveAgentRole(undefined);
@@ -604,7 +611,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* Toast Notification */}
       {notification && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 text-xs font-semibold shadow-2xl shadow-black/80 animate-in fade-in slide-in-from-bottom-2">
@@ -613,78 +620,74 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Header */}
-      <Header
-        onOpenGitHub={() => setIsGitHubModalOpen(true)}
-        onOpenOllama={() => setIsOllamaModalOpen(true)}
-        onOpenFullStack={() => setIsFullStackModalOpen(true)}
-        onNewMission={() => setIsHomePromptMode(true)}
-        onOpenHistory={() => setIsHistoryOpen(true)}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
-        historyCount={missionHistory.length}
-        isExecuting={isExecuting}
-        aiProvider={aiProvider}
-        ollamaModel={ollamaModel}
-        ciStatus={ciStatus}
-      />
-
-      {isHomePromptMode ? (
-        <main className="flex-1 flex flex-col justify-center">
-          <ManusHeroPrompt
-            onExecutePrompt={handleExecutePrompt}
-            isExecuting={isExecuting}
-            recentMissions={missionHistory}
-            onSelectMission={handleSelectMission}
-            onOpenOnboarding={() => setIsOnboardingOpen(true)}
-          />
-        </main>
-      ) : (
-        <ManusWorkspace
-          mission={mission}
-          agents={agents}
+      {/* Main 3-Panel Manus Application */}
+      <div className="flex-1 flex min-h-0 w-full overflow-hidden">
+        {/* Panel 1: Left Navigation Rail / Sidebar */}
+        <ManusSidebar
+          missions={missionHistory}
+          currentMissionId={mission.id}
+          onSelectMission={handleSelectMission}
+          onNewTask={() => setIsHomePromptMode(true)}
+          onDeleteMission={handleDeleteMission}
           isExecuting={isExecuting}
-          activeAgentRole={activeAgentRole}
-          onExecuteFollowUpPrompt={handleExecutePrompt}
-          onRunCommand={handleRunCommand}
-          isRunningCommand={isRunningCommand}
-          streamingTerminalOutput={streamingTerminalOutput}
-          isStreamingTerminal={isStreamingTerminal}
-          isWsConnected={isWsConnected}
-          onClearTerminal={() => setStreamingTerminalOutput('')}
-          onUpdateFile={handleUpdateFile}
-          onAddFile={handleAddFile}
-          onDeleteFile={handleDeleteFile}
-          onUpdateVideo={handleUpdateVideo}
-          onPushToGitHub={() => setIsGitHubModalOpen(true)}
-          onNewMission={() => setIsHomePromptMode(true)}
+          isOpen={isSidebarOpen}
+          onToggleOpen={() => setIsSidebarOpen(!isSidebarOpen)}
+          onOpenGitHub={() => setIsGitHubModalOpen(true)}
+          onOpenOllama={() => setIsOllamaModalOpen(true)}
+          onOpenFullStack={() => setIsFullStackModalOpen(true)}
+          onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          aiProvider={aiProvider}
         />
-      )}
 
-      {/* Footer Info */}
-      <footer className="border-t border-slate-800/80 bg-slate-950/60 px-4 lg:px-8 py-3 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="font-bold text-slate-400">AgentStation v2.4</span>
-          <span>•</span>
-          <span>Multi-Agent Autonomous Orchestration</span>
-          <span>•</span>
-          <span className="text-emerald-400 font-mono">Sandbox Status: Operational</span>
-        </div>
+        {/* Panel 2 & 3: Manus Workstation */}
+        {isHomePromptMode ? (
+          <div className="flex-1 flex flex-col justify-center overflow-y-auto min-h-0 bg-slate-950">
+            <ManusHeroPrompt
+              onExecutePrompt={handleExecutePrompt}
+              isExecuting={isExecuting}
+              recentMissions={missionHistory}
+              onSelectMission={handleSelectMission}
+              onOpenOnboarding={() => setIsOnboardingOpen(true)}
+            />
+          </div>
+        ) : (
+          <div className="flex-1 flex min-h-0 overflow-hidden">
+            {/* Panel 2: Center Conversational Stream & Autonomous Plan */}
+            <div className="w-full lg:w-[48%] xl:w-[45%] h-full min-h-0 border-r border-slate-800/80 flex flex-col">
+              <ManusConversation
+                mission={mission}
+                isExecuting={isExecuting}
+                activeAgentRole={activeAgentRole}
+                onExecuteFollowUp={handleExecutePrompt}
+                onNewTask={() => setIsHomePromptMode(true)}
+                onSelectTab={(tab) => setComputerTab(tab)}
+              />
+            </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsOllamaModalOpen(true)}
-            className="hover:text-slate-300 transition"
-          >
-            Local Ollama Models
-          </button>
-          <button
-            onClick={() => setIsGitHubModalOpen(true)}
-            className="text-blue-400 hover:text-blue-300 transition"
-          >
-            github.com/Olori24/AgentStation
-          </button>
-        </div>
-      </footer>
+            {/* Panel 3: Right "Manus's Computer" (Virtual Desktop / MicroVM) */}
+            <div className="hidden lg:flex flex-1 h-full min-h-0 p-3 bg-slate-900/30 flex-col">
+              <ManusComputer
+                files={mission.files}
+                execution={mission.execution}
+                video={mission.video}
+                onUpdateVideo={handleUpdateVideo}
+                activeTab={computerTab}
+                onTabChange={setComputerTab}
+                onRunCommand={handleRunCommand}
+                isRunningCommand={isRunningCommand}
+                streamingTerminalOutput={streamingTerminalOutput}
+                isStreamingTerminal={isStreamingTerminal}
+                isWsConnected={isWsConnected}
+                onClearTerminal={() => setStreamingTerminalOutput('')}
+                onUpdateFile={handleUpdateFile}
+                onAddFile={handleAddFile}
+                onDeleteFile={handleDeleteFile}
+                onPushToGitHub={() => setIsGitHubModalOpen(true)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* GitHub Repository Modal */}
       <GitHubModal
