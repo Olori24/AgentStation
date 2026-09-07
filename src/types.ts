@@ -62,6 +62,20 @@ export interface TestExecutionResult {
   durationMs: number;
 }
 
+export interface TerminalStreamMessage {
+  type: 'connection_established' | 'terminal_start' | 'terminal_chunk' | 'terminal_exit' | 'terminal_error' | 'pong';
+  command?: string;
+  text?: string;
+  stream?: 'stdout' | 'stderr';
+  exitCode?: number;
+  durationMs?: number;
+  testsPassed?: number;
+  testsFailed?: number;
+  missionId?: string;
+  timestamp?: string;
+  activeClients?: number;
+}
+
 export interface SquadMission {
   id: string;
   prompt: string;

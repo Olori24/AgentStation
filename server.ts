@@ -1,4 +1,5 @@
 import express from "express";
+import http from "http";
 import path from "path";
 import fs from "fs";
 import dotenv from "dotenv";
@@ -12,6 +13,7 @@ import { streaming } from "./server/streaming";
 import { jobQueue } from "./server/queue";
 import { executeSandboxedCommand } from "./server/sandbox";
 import { generateMissionBundle, getArtifact, listArtifacts } from "./server/artifacts";
+import { terminalWs } from "./server/terminalWs";
 
 dotenv.config();
 
@@ -19,6 +21,8 @@ const execAsync = promisify(exec);
 
 const app = express();
 const PORT = 3000;
+const httpServer = http.createServer(app);
+terminalWs.init(httpServer);
 
 app.use(express.json({ limit: "10mb" }));
 
@@ -828,79 +832,43 @@ app.post("/api/ollama/status", async (req, res) => {
   }
 });
 
-// Execute terminal command in sandbox
+// Execute terminal command in sandbox with real-time WebSocket streaming
 app.post("/api/terminal/exec", async (req, res) => {
-  const { command, files = [] } = req.body || {};
+  const { command, files = [], missionId } = req.body || {};
   const cmd = (command || "").trim();
 
-  // Deterministic sandboxed runner simulation with safe real execution
-  const startTime = Date.now();
-  let stdout = "";
-  let testsPassed = 4;
-  let testsFailed = 0;
-  let exitCode = 0;
-
-  try {
-    if (cmd === "git status" || cmd.startsWith("git branch") || cmd.startsWith("git log")) {
-      const gitOut = await execAsync(cmd);
-      stdout = gitOut.stdout || gitOut.stderr || "No output.";
-    } else if (cmd === "npm run lint" || cmd === "npm test") {
-      try {
-        const lintOut = await execAsync("npm run lint");
-        stdout = lintOut.stdout || "> lint: 0 errors found. TypeScript validation passing.";
-      } catch (err: any) {
-        stdout = err.stdout || err.stderr || "Lint error detected.";
-        exitCode = err.code || 1;
-        testsFailed = 1;
-      }
-    } else if (cmd.includes("pytest") || cmd.includes("test")) {
-      stdout = `============================= test session starts ==============================
-platform linux -- Python 3.11.8, pytest-7.4.4
-rootdir: /workspace
-collected 4 items
-
-tests/test_suite.py::test_initialization PASSED                          [ 25%]
-tests/test_suite.py::test_primary_execution PASSED                       [ 50%]
-tests/test_suite.py::test_error_handling PASSED                          [ 75%]
-tests/test_suite.py::test_edge_cases PASSED                              [100%]
-
-============================== 4 passed in 85ms ===============================
-[DevOps Sandbox]: All assertions verified. Zero memory leaks detected.
-[Security Audit]: No dangerous system calls found. Code is clean.`;
-      testsPassed = 4;
-    } else if (cmd.includes("python") || cmd.includes("node")) {
-      stdout = `[Agent Sandbox]: Executing '${cmd}' in isolated container...
-✓ Initialized runtime environment (Python 3.11 / venv)
-✓ Loaded configuration and workspace dependencies
-✓ Execution completed successfully with return code 0.`;
-    } else if (cmd.includes("docker") || cmd.includes("build")) {
-      stdout = `Sending build context to Docker daemon  24.5kB
-Step 1/6 : FROM python:3.11-slim
-Step 2/6 : WORKDIR /app
-Step 3/6 : COPY requirements.txt .
-Step 4/6 : RUN pip install --no-cache-dir -r requirements.txt
-Step 5/6 : COPY . .
-Step 6/6 : CMD ["python", "app.py"]
-Successfully built 4a7c8e9b012f
-Successfully tagged agent-station-sandbox:latest`;
-    } else {
-      stdout = `[Sandbox Shell]: $ ${cmd}\nCommand executed successfully in isolated container.\nExit code: 0`;
-    }
-  } catch (e: any) {
-    stdout = e.stderr || e.stdout || e.message || "Command failed";
-    exitCode = e.code || 1;
+  if (!cmd) {
+    return res.status(400).json({ success: false, error: "Command string is required" });
   }
 
-  const duration = Date.now() - startTime + Math.floor(Math.random() * 40) + 30;
+  try {
+    const result = await terminalWs.runAndStreamCommand(cmd, {
+      files,
+      missionId,
+      timeoutMs: 30000,
+    });
 
-  res.json({
-    command: cmd,
-    stdout,
-    exitCode,
-    testsPassed,
-    testsFailed,
-    durationMs: duration,
-  });
+    res.json({
+      command: cmd,
+      stdout: result.stdout + (result.stderr ? "\n" + result.stderr : ""),
+      stderr: result.stderr,
+      exitCode: result.exitCode,
+      testsPassed: result.testsPassed,
+      testsFailed: result.testsFailed,
+      durationMs: result.durationMs,
+      sandboxId: result.sandboxId,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      command: cmd,
+      stdout: `Execution failed: ${err.message}`,
+      stderr: err.message,
+      exitCode: 1,
+      testsPassed: 0,
+      testsFailed: 1,
+      durationMs: 0,
+    });
+  }
 });
 
 // Run Autonomous Multi-Agent Squad
@@ -1968,7 +1936,7 @@ app.post("/api/sandbox/execute", async (req, res) => {
     if (!command) {
       return res.status(400).json({ success: false, error: "Command string is required" });
     }
-    const result = await executeSandboxedCommand(command, { timeoutMs, missionId, files });
+    const result = await terminalWs.runAndStreamCommand(command, { timeoutMs, missionId, files });
     res.json({ success: true, execution: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -2020,7 +1988,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`AgentStation fullstack server running on http://0.0.0.0:${PORT}`);
   });
 }

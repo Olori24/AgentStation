@@ -60,7 +60,7 @@
   ],
   "systemMetrics": {
     "totalMissionsSynthesized": 0,
-    "totalSandboxExecutions": 1,
+    "totalSandboxExecutions": 5,
     "totalGitCommits": 0,
     "totalVideosRendered": 0
   }

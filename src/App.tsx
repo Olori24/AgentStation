@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Code2,
   Film,
@@ -23,7 +23,7 @@ import { UserOnboardingModal } from './components/UserOnboardingModal';
 import { FullStackOperationsModal } from './components/FullStackOperationsModal';
 import { DEFAULT_AGENTS, INITIAL_MISSION, GITHUB_REPO_INFO } from './data/defaults';
 import { SAMPLE_MISSIONS } from './data/sampleMissions';
-import { SquadMission, AgentProfile, AgentRole, AgentLogEntry, WorkspaceFile, VideoProject, CiStatusInfo } from './types';
+import { SquadMission, AgentProfile, AgentRole, AgentLogEntry, WorkspaceFile, VideoProject, CiStatusInfo, TerminalStreamMessage } from './types';
 
 export default function App() {
   const [missionHistory, setMissionHistory] = useState<SquadMission[]>(() => {
@@ -66,6 +66,123 @@ export default function App() {
   });
   const [ciStatus, setCiStatus] = useState<CiStatusInfo | null>(null);
   const [isFullStackModalOpen, setIsFullStackModalOpen] = useState(false);
+
+  // Real-time WebSocket terminal streamer state
+  const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
+  const [streamingTerminalOutput, setStreamingTerminalOutput] = useState<string>(() => {
+    return mission?.execution?.stdout || '';
+  });
+  const [isStreamingTerminal, setIsStreamingTerminal] = useState<boolean>(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // Synchronize terminal output buffer when active mission changes
+  useEffect(() => {
+    if (mission?.execution?.stdout) {
+      setStreamingTerminalOutput(mission.execution.stdout);
+    }
+  }, [mission?.id]);
+
+  // WebSocket terminal streaming listener
+  useEffect(() => {
+    let ws: WebSocket | null = null;
+    let reconnectTimer: any = null;
+    let active = true;
+
+    const connectWebSocket = () => {
+      if (!active) return;
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/terminal`;
+        ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (!active) return;
+          setIsWsConnected(true);
+          if (mission?.id) {
+            ws?.send(JSON.stringify({ type: 'subscribe', missionId: mission.id }));
+          }
+        };
+
+        ws.onmessage = (event) => {
+          if (!active) return;
+          try {
+            const data: TerminalStreamMessage = JSON.parse(event.data);
+            if (data.type === 'terminal_start') {
+              setIsStreamingTerminal(true);
+              setIsRunningCommand(true);
+              const header = `$ ${data.command}\n`;
+              setStreamingTerminalOutput(header);
+            } else if (data.type === 'terminal_chunk') {
+              if (data.text) {
+                setStreamingTerminalOutput((prev) => prev + data.text);
+              }
+            } else if (data.type === 'terminal_exit') {
+              setIsStreamingTerminal(false);
+              setIsRunningCommand(false);
+              setMission((prev) => {
+                const finalStdout = data.command
+                  ? `$ ${data.command}\n${data.text || ''}`
+                  : prev.execution?.stdout || '';
+                return {
+                  ...prev,
+                  execution: {
+                    command: data.command || prev.execution?.command || '',
+                    stdout: finalStdout || prev.execution?.stdout || '',
+                    exitCode: data.exitCode ?? 0,
+                    testsPassed: data.testsPassed ?? prev.execution?.testsPassed ?? 0,
+                    testsFailed: data.testsFailed ?? prev.execution?.testsFailed ?? 0,
+                    durationMs: data.durationMs ?? prev.execution?.durationMs ?? 0,
+                  },
+                  logs: [
+                    {
+                      id: `exec-log-${Date.now()}`,
+                      timestamp: new Date().toLocaleTimeString(),
+                      role: 'qa',
+                      agentName: 'Sentinel (QA Auditor)',
+                      type: 'terminal',
+                      message: `Sandbox execution stream finished: "${data.command || 'terminal'}"`,
+                      details: `Exit code: ${data.exitCode} | Duration: ${data.durationMs}ms`,
+                    },
+                    ...prev.logs,
+                  ],
+                };
+              });
+            } else if (data.type === 'connection_established') {
+              setIsWsConnected(true);
+            }
+          } catch (e) {
+            console.debug('WebSocket stream parse note:', e);
+          }
+        };
+
+        ws.onclose = () => {
+          if (!active) return;
+          setIsWsConnected(false);
+          setIsStreamingTerminal(false);
+          reconnectTimer = setTimeout(connectWebSocket, 3000);
+        };
+
+        ws.onerror = () => {
+          if (!active) return;
+          setIsWsConnected(false);
+        };
+      } catch (err) {
+        console.warn('WebSocket init note:', err);
+        reconnectTimer = setTimeout(connectWebSocket, 3000);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      active = false;
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [mission?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -350,19 +467,34 @@ export default function App() {
     }
   };
 
-  // Run a sandbox terminal command
+  // Run a sandbox terminal command with real-time streaming
   const handleRunCommand = async (command: string) => {
     setIsRunningCommand(true);
+    setIsStreamingTerminal(true);
+    const startBanner = `$ [SANDBOX ISOLATED] ${command}\n`;
+    setStreamingTerminalOutput(startBanner);
+
     try {
       const res = await fetch('/api/terminal/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command, files: mission.files }),
+        body: JSON.stringify({
+          command,
+          files: mission.files,
+          missionId: mission.id,
+        }),
       });
       const data = await res.json();
       setMission((prev) => ({
         ...prev,
-        execution: data,
+        execution: {
+          command: data.command || command,
+          stdout: data.stdout || startBanner,
+          exitCode: data.exitCode ?? 0,
+          testsPassed: data.testsPassed ?? 0,
+          testsFailed: data.testsFailed ?? 0,
+          durationMs: data.durationMs ?? 0,
+        },
         logs: [
           {
             id: `exec-log-${Date.now()}`,
@@ -376,12 +508,15 @@ export default function App() {
           ...prev.logs,
         ],
       }));
+      setStreamingTerminalOutput((prev) => (prev && prev.length > startBanner.length ? prev : data.stdout || startBanner));
       showToast(`Command finished with return code ${data.exitCode}`);
     } catch (err: any) {
       console.error(err);
+      setStreamingTerminalOutput((prev) => prev + `\n[Execution error]: ${err.message || 'Failed to execute command'}`);
       showToast('Failed to execute terminal command');
     } finally {
       setIsRunningCommand(false);
+      setIsStreamingTerminal(false);
     }
   };
 
@@ -618,6 +753,10 @@ export default function App() {
                 execution={mission.execution}
                 onRunCommand={handleRunCommand}
                 isRunningCommand={isRunningCommand}
+                streamingTerminalOutput={streamingTerminalOutput}
+                isStreamingTerminal={isStreamingTerminal}
+                isWsConnected={isWsConnected}
+                onClearTerminal={() => setStreamingTerminalOutput('')}
                 onUpdateFile={handleUpdateFile}
                 onAddFile={handleAddFile}
                 onDeleteFile={handleDeleteFile}
@@ -642,6 +781,10 @@ export default function App() {
               execution={mission.execution}
               onRunCommand={handleRunCommand}
               isRunningCommand={isRunningCommand}
+              streamingTerminalOutput={streamingTerminalOutput}
+              isStreamingTerminal={isStreamingTerminal}
+              isWsConnected={isWsConnected}
+              onClearTerminal={() => setStreamingTerminalOutput('')}
               onUpdateFile={handleUpdateFile}
               onAddFile={handleAddFile}
               onDeleteFile={handleDeleteFile}

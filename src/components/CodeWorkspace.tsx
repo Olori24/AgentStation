@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FileCode,
   Copy,
@@ -17,6 +17,8 @@ import {
   Github,
   Search,
   Sparkles,
+  Radio,
+  Wifi,
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { WorkspaceFile, TestExecutionResult } from '../types';
@@ -26,6 +28,10 @@ interface CodeWorkspaceProps {
   execution: TestExecutionResult;
   onRunCommand: (command: string) => Promise<void>;
   isRunningCommand: boolean;
+  streamingTerminalOutput?: string;
+  isStreamingTerminal?: boolean;
+  isWsConnected?: boolean;
+  onClearTerminal?: () => void;
   onUpdateFile?: (fileIndex: number, newContent: string) => void;
   onAddFile?: (newFile: WorkspaceFile) => void;
   onDeleteFile?: (fileIndex: number) => void;
@@ -38,6 +44,10 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   execution,
   onRunCommand,
   isRunningCommand,
+  streamingTerminalOutput,
+  isStreamingTerminal = false,
+  isWsConnected = false,
+  onClearTerminal,
   onUpdateFile,
   onAddFile,
   onDeleteFile,
@@ -54,6 +64,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const [newFileName, setNewFileName] = useState('');
   const [previewReloadKey, setPreviewReloadKey] = useState(0);
   const [originalContents, setOriginalContents] = useState<Record<string, string>>({});
+  const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
   const handleGitHubClick = onPushToGitHub || onOpenGitHub;
 
@@ -87,6 +98,17 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
     durationMs: 75,
     exitCode: 0,
   };
+
+  const displayOutput =
+    streamingTerminalOutput !== undefined && streamingTerminalOutput !== ''
+      ? streamingTerminalOutput
+      : safeExecution.stdout;
+
+  useEffect(() => {
+    if (activeTab === 'terminal') {
+      terminalEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [displayOutput, activeTab, isStreamingTerminal]);
 
   const handleCopyCode = () => {
     if (!currentFile) return;
@@ -593,27 +615,65 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         <div className="flex-1 flex flex-col min-h-0 bg-slate-950">
           <div className="px-4 py-2 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              <div
+                className={`w-2.5 h-2.5 rounded-full ${
+                  isStreamingTerminal
+                    ? 'bg-emerald-400 animate-ping'
+                    : isWsConnected
+                    ? 'bg-emerald-400'
+                    : 'bg-amber-400'
+                }`}
+              />
               <span className="font-mono text-slate-300 font-bold">DevOps Execution Sandbox</span>
+              {isStreamingTerminal ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 animate-pulse">
+                  <Radio className="w-2.5 h-2.5" />
+                  STREAMING LIVE
+                </span>
+              ) : isWsConnected ? (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-emerald-400 border border-slate-700 flex items-center gap-1">
+                  <Wifi className="w-2.5 h-2.5" />
+                  WS CONNECTED
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-amber-400 border border-slate-700">
+                  CONNECTING...
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
               <span className="text-emerald-400 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" />
                 {safeExecution.testsPassed} Passed
               </span>
+              {safeExecution.testsFailed > 0 && (
+                <span className="text-rose-400 flex items-center gap-1">
+                  {safeExecution.testsFailed} Failed
+                </span>
+              )}
               <span>Duration: {safeExecution.durationMs}ms</span>
               <span>Exit Code: {safeExecution.exitCode ?? 0}</span>
+              {onClearTerminal && (
+                <button
+                  type="button"
+                  onClick={onClearTerminal}
+                  title="Clear Terminal Output"
+                  className="px-1.5 py-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
             </div>
           </div>
 
-          <div className="flex-1 p-4 overflow-y-auto font-mono text-xs text-emerald-400 bg-slate-950 space-y-2 scrollbar-thin">
-            <div className="text-slate-400 flex items-center gap-2">
-              <span className="text-amber-400">$</span>
-              <span>{safeExecution.command}</span>
-            </div>
-            <pre className="whitespace-pre-wrap leading-relaxed text-slate-300 font-mono">
-              {safeExecution.stdout}
+          <div className="flex-1 p-4 overflow-y-auto font-mono text-xs bg-slate-950 space-y-2 scrollbar-thin">
+            <pre className="whitespace-pre-wrap leading-relaxed text-slate-300 font-mono select-text">
+              {displayOutput || '[Sandbox Shell]: Ready. Type a command or click a quick sandbox button below.'}
+              {isStreamingTerminal && (
+                <span className="inline-block w-2 h-3.5 ml-0.5 bg-emerald-400 animate-pulse align-middle" />
+              )}
             </pre>
+            <div ref={terminalEndRef} />
           </div>
 
           {/* Terminal Command Prompt Input */}

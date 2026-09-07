@@ -11,6 +11,7 @@ export interface SandboxExecutionOptions {
   env?: Record<string, string>;
   cwd?: string;
   files?: Array<{ path: string; content: string }>;
+  onChunk?: (text: string, stream: 'stdout' | 'stderr') => void;
 }
 
 export interface SandboxExecutionResult {
@@ -56,6 +57,15 @@ export async function executeSandboxedCommand(
       }
     }
 
+    // Ensure tests directory is available in sandbox for unit testing suites
+    const projectTests = path.join(process.cwd(), 'tests');
+    const sandboxTests = path.join(sandboxPath, 'tests');
+    if (fs.existsSync(projectTests) && !fs.existsSync(sandboxTests)) {
+      try {
+        await fs.promises.cp(projectTests, sandboxTests, { recursive: true });
+      } catch {}
+    }
+
     // Scrubbed environment variables (strip sensitive platform keys)
     const scrubbedEnv: NodeJS.ProcessEnv = {
       ...process.env,
@@ -91,6 +101,7 @@ export async function executeSandboxedCommand(
         child.kill('SIGKILL');
         const timeoutMsg = `\n[SANDBOX TIMEOUT] Command exceeded ${timeoutMs / 1000}s execution limit. Killed.`;
         stderr += timeoutMsg;
+        options.onChunk?.(timeoutMsg, 'stderr');
         if (options.missionId) {
           streaming.streamTerminalLine(options.missionId, timeoutMsg, 'stderr');
         }
@@ -99,6 +110,7 @@ export async function executeSandboxedCommand(
       child.stdout.on('data', (chunk) => {
         const text = chunk.toString();
         stdout += text;
+        options.onChunk?.(text, 'stdout');
         if (options.missionId) {
           streaming.streamTerminalLine(options.missionId, text, 'stdout');
         }
@@ -107,6 +119,7 @@ export async function executeSandboxedCommand(
       child.stderr.on('data', (chunk) => {
         const text = chunk.toString();
         stderr += text;
+        options.onChunk?.(text, 'stderr');
         if (options.missionId) {
           streaming.streamTerminalLine(options.missionId, text, 'stderr');
         }
