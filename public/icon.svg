@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Outer Hexagon Gradient -->
+    <linearGradient id="hexBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+
+    <!-- Inner Core Gradient -->
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+
+    <!-- Node Gradient 1 -->
+    <linearGradient id="nodeGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Node Gradient 2 -->
+    <linearGradient id="nodeGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="100%" stop-color="#c026d3" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="24" result="blur" />
+    </filter>
+  </defs>
+
+  <!-- App Icon Squircle Container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  
+  <!-- Subtle Border Rim -->
+  <rect width="510" height="510" x="1" y="1" rx="111" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="2" />
+
+  <!-- Ambient Backdrop Glow -->
+  <circle cx="256" cy="256" r="140" fill="#3b82f6" opacity="0.16" filter="url(#softGlow)" />
+  <circle cx="256" cy="240" r="90" fill="#38bdf8" opacity="0.22" filter="url(#softGlow)" />
+
+  <!-- Station Hexagon Framework (Isometric Orbit) -->
+  <g id="station-geometry" transform="translate(0, -6)">
+    <!-- Outer Orbit Guides -->
+    <circle cx="256" cy="262" r="150" fill="none" stroke="#1e293b" stroke-width="2" stroke-dasharray="4 8" opacity="0.8" />
+    <circle cx="256" cy="262" r="185" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="12 16" opacity="0.4" />
+
+    <!-- Station Outer Hexagon Outer Shell -->
+    <polygon 
+      points="256,120 376,190 376,330 256,400 136,330 136,190" 
+      fill="rgba(15, 23, 42, 0.75)" 
+      stroke="url(#hexBorderGrad)" 
+      stroke-width="7" 
+      stroke-linejoin="round"
+      filter="url(#glow)"
+    />
+
+    <!-- Inner Structural Hexagon Web -->
+    <polygon 
+      points="256,155 346,207 346,311 256,363 166,311 166,207" 
+      fill="rgba(30, 41, 59, 0.4)" 
+      stroke="#38bdf8" 
+      stroke-width="2.5" 
+      stroke-opacity="0.6"
+      stroke-linejoin="round"
+    />
+
+    <!-- Interconnecting Agent Traces (Radial Rays to Core) -->
+    <line x1="256" y1="120" x2="256" y2="218" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" opacity="0.9" />
+    <line x1="376" y1="330" x2="295" y2="282" stroke="#818cf8" stroke-width="4" stroke-linecap="round" opacity="0.9" />
+    <line x1="136" y1="330" x2="217" y2="282" stroke="#34d399" stroke-width="4" stroke-linecap="round" opacity="0.9" />
+
+    <!-- Autonomous Agent Nodes on Vertices -->
+    <!-- Node 1: Atlas (Top - Architect / North Star) -->
+    <g transform="translate(256, 120)">
+      <circle cx="0" cy="0" r="16" fill="#0f172a" stroke="#38bdf8" stroke-width="4" />
+      <circle cx="0" cy="0" r="7" fill="#38bdf8" />
+    </g>
+
+    <!-- Node 2: Cypher (Top Right - Code Engine) -->
+    <g transform="translate(376, 190)">
+      <circle cx="0" cy="0" r="14" fill="#0f172a" stroke="#60a5fa" stroke-width="3" />
+      <circle cx="0" cy="0" r="6" fill="#60a5fa" />
+    </g>
+
+    <!-- Node 3: Sentinel (Bottom Right - QA Defense) -->
+    <g transform="translate(376, 330)">
+      <circle cx="0" cy="0" r="15" fill="#0f172a" stroke="#a78bfa" stroke-width="4" />
+      <circle cx="0" cy="0" r="6.5" fill="#a78bfa" />
+    </g>
+
+    <!-- Node 4: Creative Director (Bottom Anchor) -->
+    <g transform="translate(256, 400)">
+      <circle cx="0" cy="0" r="14" fill="#0f172a" stroke="#f472b6" stroke-width="3.5" />
+      <circle cx="0" cy="0" r="6" fill="#f472b6" />
+    </g>
+
+    <!-- Node 5: Motion Producer (Bottom Left - Video Hub) -->
+    <g transform="translate(136, 330)">
+      <circle cx="0" cy="0" r="15" fill="#0f172a" stroke="#34d399" stroke-width="4" />
+      <circle cx="0" cy="0" r="6.5" fill="#34d399" />
+    </g>
+
+    <!-- Node 6: Bridge Node (Top Left) -->
+    <g transform="translate(136, 190)">
+      <circle cx="0" cy="0" r="14" fill="#0f172a" stroke="#2dd4bf" stroke-width="3" />
+      <circle cx="0" cy="0" r="6" fill="#2dd4bf" />
+    </g>
+
+    <!-- Central Station Reactor Core (Isometric Cube / Diamond) -->
+    <g id="station-core">
+      <!-- Outer Core Diamond -->
+      <polygon 
+        points="256,216 298,260 256,304 214,260" 
+        fill="url(#coreGrad)" 
+        stroke="#93c5fd" 
+        stroke-width="3"
+        filter="url(#glow)"
+      />
+      <!-- Top Facet -->
+      <polygon points="256,216 298,260 256,252 214,260" fill="#93c5fd" opacity="0.6" />
+      <!-- Left Facet -->
+      <polygon points="214,260 256,252 256,304" fill="#1d4ed8" opacity="0.5" />
+      <!-- Right Facet -->
+      <polygon points="298,260 256,252 256,304" fill="#3b82f6" opacity="0.4" />
+      
+      <!-- Central Nexus Radiant Spark -->
+      <circle cx="256" cy="260" r="7" fill="#ffffff" filter="url(#glow)" />
+      <circle cx="256" cy="260" r="3" fill="#e0f2fe" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "name": "AgentStation",
+  "description": "Autonomous fullstack multi-agent platform for collaborative software engineering, sandbox code execution, and kinetic marketing video production with GitHub repository synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

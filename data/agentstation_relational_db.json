@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "users": [
+    {
+      "id": "user-bolaji-01",
+      "email": "bakande11@gmail.com",
+      "name": "Bolaji Akande",
+      "role": "admin",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      "organizationId": "org-station-01",
+      "createdAt": "2026-09-07T20:42:27.253Z"
+    },
+    {
+      "id": "user-cypher-dev",
+      "email": "cypher.dev@agentstation.io",
+      "name": "Cypher (Senior Engineer)",
+      "role": "engineer",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "organizationId": "org-station-01",
+      "createdAt": "2026-09-07T20:42:27.253Z"
+    },
+    {
+      "id": "user-sentinel-qa",
+      "email": "sentinel.qa@agentstation.io",
+      "name": "Sentinel (Lead QA Reviewer)",
+      "role": "reviewer",
+      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+      "organizationId": "org-station-01",
+      "createdAt": "2026-09-07T20:42:27.253Z"
+    }
+  ],
+  "organizations": [
+    {
+      "id": "org-station-01",
+      "name": "AgentStation Core Engineering",
+      "slug": "agentstation-core",
+      "tier": "enterprise",
+      "quotaRemaining": 98500,
+      "createdAt": "2026-09-07T20:42:27.252Z"
+    }
+  ],
+  "missions": [],
+  "files": [],
+  "logs": [],
+  "jobs": [
+    {
+      "id": "job-1788813755528-99f0c1",
+      "type": "mission_synthesis",
+      "status": "completed",
+      "progress": 100,
+      "attempt": 1,
+      "maxAttempts": 3,
+      "result": {
+        "synthesized": true
+      },
+      "createdAt": "2026-09-07T20:42:35.528Z",
+      "startedAt": "2026-09-07T20:42:35.529Z",
+      "finishedAt": "2026-09-07T20:42:36.932Z"
+    }
+  ],
+  "systemMetrics": {
+    "totalMissionsSynthesized": 0,
+    "totalSandboxExecutions": 1,
+    "totalGitCommits": 0,
+    "totalVideosRendered": 0
+  }
+}
