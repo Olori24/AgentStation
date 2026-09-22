@@ -873,7 +873,20 @@ app.post("/api/terminal/exec", async (req, res) => {
 });
 
 // Run Autonomous Multi-Agent Squad
-app.post("/api/agents/run", async (req, res) => {
+app.post("/api/agents/run", async (req: any, res) => {
+  try {
+    const { prompt, provider = "gemini", ollamaUrl, ollamaModel, maxRepairCycles = 2 } = req.body || {};
+    if (!prompt || typeof prompt !== "string") return res.status(400).json({ success: false, error: "Missing or invalid prompt" });
+    const missionId = "mission-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    const started = Date.now();
+    const result = await executeAutonomousMission({ missionId, prompt, provider, ollamaUrl, ollamaModel, maxRepairCycles });
+    res.json({ success: result.status === "completed", missionId, mission: result, verification: result.verification, durationMs: Date.now() - started });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || "Autonomous mission failed" });
+  }
+});
+
+app.post("/api/agents/run-legacy", async (req, res) => {
   const { prompt, provider = "gemini", ollamaUrl = "http://localhost:11434", ollamaModel = "llama3" } = req.body || {};
   if (!prompt || typeof prompt !== "string") {
     return res.status(400).json({ error: "Missing or invalid prompt" });
