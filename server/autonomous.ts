@@ -38,7 +38,7 @@ async function gemini(prompt: string) {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         config: { responseMimeType: "application/json" },
       });
-      const raw = (r.text || "").trim().replace(/^\`\`\`json\s*/i, "").replace(/^\`\`\`\s*/i, "").replace(/\s*\`\`\`$/i, "");
+      const raw = (r.text || "").trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "");
       return JSON.parse(raw);
     } catch (e) { last = e; }
   }
@@ -83,17 +83,17 @@ export async function executeAutonomousMission(input: AutonomousMissionInput) {
   };
 
   record("Atlas", "Planning the mission and defining objective verification gates.");
-  const blueprint = await ask(input, \`You are Atlas, principal architect.
+  const blueprint = await ask(input, `You are Atlas, principal architect.
 Mission: \${prompt}
 Return JSON only with missionTitle, goal, stack, plan, testCommand, acceptanceCriteria, securityConstraints.
-testCommand MUST be a safe local command using pytest, npm, node, or python only. Never claim execution occurred.\`);
+testCommand MUST be a safe local command using pytest, npm, node, or python only. Never claim execution occurred.`);
 
   record("Cypher", "Implementing the approved architecture as complete runnable source.");
-  const implementation = await ask(input, \`You are Cypher, senior full-stack engineer.
+  const implementation = await ask(input, `You are Cypher, senior full-stack engineer.
 Mission: \${prompt}
 Architecture: \${JSON.stringify(blueprint)}
 Return JSON only: {"gitCommitMessage":"...","files":[{"name":"...","path":"...","language":"...","content":"complete runnable file"}]}
-Include real tests. No pseudocode, fake test output, fake metrics, credentials, or secrets. Paths must be relative.\`);
+Include real tests. No pseudocode, fake test output, fake metrics, credentials, or secrets. Paths must be relative.`);
 
   let files = filesOf(implementation.files);
   if (!files.length) throw new Error("No valid source files were returned by the developer agent.");
@@ -105,7 +105,7 @@ Include real tests. No pseudocode, fake test output, fake metrics, credentials, 
 
   for (let cycle = 0; cycle <= maxCycles; cycle++) {
     const command = String(blueprint.testCommand || "pytest -q tests").trim();
-    record("Sentinel", cycle ? \`Re-running real tests after repair cycle \${cycle}.\` : \`Running real verification: \${command}\`);
+    record("Sentinel", cycle ? `Re-running real tests after repair cycle \${cycle}.` : `Running real verification: \${command}`);
     execution = await executeSandboxedCommand(command, {
       missionId,
       files: files.map(f => ({ path: f.path, content: f.content })),
@@ -118,15 +118,15 @@ Include real tests. No pseudocode, fake test output, fake metrics, credentials, 
     passed = execution.exitCode === 0;
 
     record("Sentinel", passed
-      ? \`Verification passed with exit code 0; \${c.passed} test(s) reported.\`
-      : \`Verification failed with exit code \${execution.exitCode}; entering repair workflow.\`,
+      ? `Verification passed with exit code 0; \${c.passed} test(s) reported.`
+      : `Verification failed with exit code \${execution.exitCode}; entering repair workflow.`,
       { stdout: execution.stdout.slice(-5000), stderr: execution.stderr.slice(-5000) });
 
     if (passed || cycle === maxCycles) break;
 
     repairCycles++;
-    record("Reviewer", \`Diagnosing the failure and requesting targeted repair \${repairCycles}/\${maxCycles}.\`);
-    const repair = await ask(input, \`You are Sentinel, senior QA/reviewer.
+    record("Reviewer", `Diagnosing the failure and requesting targeted repair \${repairCycles}/\${maxCycles}.`);
+    const repair = await ask(input, `You are Sentinel, senior QA/reviewer.
 Mission: \${prompt}
 Architecture: \${JSON.stringify(blueprint)}
 Files: \${JSON.stringify(files)}
@@ -135,14 +135,14 @@ Exit code: \${execution.exitCode}
 STDOUT: \${execution.stdout.slice(-7000)}
 STDERR: \${execution.stderr.slice(-7000)}
 Return JSON only: {"diagnosis":"root cause","files":[{"path":"...","language":"...","content":"complete corrected file"}]}
-Only return files that need replacement/addition. Do not claim success unless the execution evidence proves it.\`);
+Only return files that need replacement/addition. Do not claim success unless the execution evidence proves it.`);
 
     const repairs = filesOf(repair.files);
     if (!repairs.length) throw new Error("Repair agent returned no concrete file changes.");
     const merged = new Map(files.map(f => [f.path, f]));
     repairs.forEach(f => merged.set(f.path, f));
     files = [...merged.values()];
-    record("Cypher", \`Applied \${repairs.length} targeted repair file(s).\`, { diagnosis: repair.diagnosis });
+    record("Cypher", `Applied \${repairs.length} targeted repair file(s).`, { diagnosis: repair.diagnosis });
   }
 
   record("Forge", passed
