@@ -1,13 +1,36 @@
+<div align="center">
+
 # AgentStation
 
-> **Autonomous Fullstack Multi-Agent Cluster Orchestrator with Real-Time Sandbox Execution, Interactive Code Workspace & Kinetic Video Studio**
+**Mission-to-artifact workspace for autonomous full-stack engineering.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://react.dev/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38bdf8.svg)](https://tailwindcss.com/)
-[![Express](https://img.shields.io/badge/Express-4.21-000000.svg)](https://expressjs.com/)
-[![Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8e24aa.svg)](https://ai.google.dev/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Documentation standard](https://img.shields.io/badge/README-Premium%20Standard-111827?style=flat-square)](#documentation-standard)
+[![Repository](https://img.shields.io/badge/GitHub-Olori24-181717?style=flat-square&logo=github)](https://github.com/Olori24)
+
+</div>
+
+![AgentStation architecture overview](./docs/assets/repo-hero.svg)
+
+> **Repository status:** Active development. This README describes implemented repository capabilities and explicitly separates shipped work from future or environment-dependent work.
+
+## Documentation standard
+
+This repository follows the portfolio documentation standard established for NSMS: clear product positioning, visual orientation, architecture, security boundaries, setup, validation evidence, maturity tracking, roadmap, and honest production-status language. Claims are kept scoped to repository evidence rather than inferred from intent.
+
+### At a glance
+
+| Area | Standard |
+|---|---|
+| Product | Clear one-sentence purpose and user value |
+| Architecture | Visual system model plus technical boundaries |
+| Security | Explicit trust, permission, tenant and secret-handling boundaries |
+| Evidence | Tests, CI, deployment and production claims separated |
+| Maturity | Implemented / pending / environment-dependent status |
+| Roadmap | Future work clearly separated from shipped capability |
+
+### Evidence language
+
+**IMPLEMENTED** means present in the repository. **TESTED** means supported by an executed test or CI result. **DEPLOYED** means a deployment target is configured or documented. **VERIFIED IN PRODUCTION** requires production evidence. **MEASURED** requires an actual measurement. Roadmap items are not represented as shipped.
 
 ---
 
