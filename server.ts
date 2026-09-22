@@ -14,6 +14,7 @@ import { jobQueue } from "./server/queue";
 import { executeSandboxedCommand } from "./server/sandbox";
 import { generateMissionBundle, getArtifact, listArtifacts } from "./server/artifacts";
 import { terminalWs } from "./server/terminalWs";
+import { executeAutonomousMission } from "./server/autonomous";
 
 dotenv.config();
 
