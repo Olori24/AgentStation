@@ -877,12 +877,41 @@ app.post("/api/agents/run", async (req: any, res) => {
   try {
     const { prompt, provider = "gemini", ollamaUrl, ollamaModel, maxRepairCycles = 2 } = req.body || {};
     if (!prompt || typeof prompt !== "string") return res.status(400).json({ success: false, error: "Missing or invalid prompt" });
+    const user = req.user || getActiveUser();
     const missionId = "mission-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+    const createdAt = new Date().toISOString();
+    db.upsertMission({
+      id: missionId, userId: user.id, organizationId: user.organizationId,
+      title: "Autonomous Mission", prompt, status: "running",
+      targetRepo: "Olori24/AgentStation", branch: "main", filesCount: 0,
+      durationMs: 0, createdAt, updatedAt: createdAt
+    });
     const started = Date.now();
-    const result = await executeAutonomousMission({ missionId, prompt, provider, ollamaUrl, ollamaModel, maxRepairCycles });
-    res.json({ success: result.status === "completed", missionId, mission: result, verification: result.verification, durationMs: Date.now() - started });
+    try {
+      const result = await executeAutonomousMission({ missionId, prompt, provider, ollamaUrl, ollamaModel, maxRepairCycles });
+      db.upsertMission({
+        id: missionId, userId: user.id, organizationId: user.organizationId,
+        title: result.missionTitle, prompt, status: result.status,
+        targetRepo: "Olori24/AgentStation", branch: "main",
+        filesCount: result.files.length, durationMs: Date.now() - started,
+        metadata: { verification: result.verification, plan: result.plan },
+        createdAt, updatedAt: new Date().toISOString()
+      });
+      db.saveFilesForMission(missionId, result.files);
+      return res.json({ success: result.status === "completed", missionId, mission: result, verification: result.verification });
+    } catch (err: any) {
+      db.upsertMission({
+        id: missionId, userId: user.id, organizationId: user.organizationId,
+        title: "Autonomous Mission", prompt, status: "failed",
+        targetRepo: "Olori24/AgentStation", branch: "main", filesCount: 0,
+        durationMs: Date.now() - started,
+        metadata: { error: err?.message || "Autonomous mission failed" },
+        createdAt, updatedAt: new Date().toISOString()
+      });
+      throw err;
+    }
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message || "Autonomous mission failed" });
+    return res.status(500).json({ success: false, error: err?.message || "Autonomous mission failed" });
   }
 });
 
